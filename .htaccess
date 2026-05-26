@@ -1,0 +1,12 @@
+# Required for FFmpeg WASM (SharedArrayBuffer)
+<IfModule mod_headers.c>
+    Header always set Cross-Origin-Opener-Policy   "same-origin"
+    Header always set Cross-Origin-Embedder-Policy "require-corp"
+</IfModule>
+
+# Correct MIME type for WASM files
+<IfModule mod_mime.c>
+    AddType application/wasm .wasm
+</IfModule>
+
+Options -Indexes
