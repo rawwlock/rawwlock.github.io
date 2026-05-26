@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TRANSFORMAT — Media Converter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Background grid -->
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-vignette" aria-hidden="true"></div>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand">
+        <span class="brand-icon">▶</span>
+        <span class="brand-name">TRANSFORMAT</span>
+        <span class="brand-version">v2.1</span>
+      </div>
+      <div class="header-right">
+        <div class="engine-status" id="engine-status">
+          <span class="engine-dot" id="engine-dot"></span>
+          <span class="engine-label" id="engine-label">LOADING ENGINE</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-ticker" id="header-ticker">
+      <span id="ticker-text">Initialising FFmpeg WebAssembly engine — please wait…</span>
+    </div>
+  </header>
+
+  <main class="main-layout">
+
+    <!-- LEFT PANEL: Input -->
+    <section class="panel panel-input">
+      <div class="panel-title">
+        <span class="panel-num">01</span> INPUT FILES
+      </div>
+
+      <!-- Drop zone -->
+      <div class="drop-zone" id="drop-zone" tabindex="0" role="button" aria-label="Click or drop files to add">
+        <div class="drop-inner">
+          <div class="drop-bigicon">⬇</div>
+          <div class="drop-headline">DROP FILES HERE</div>
+          <div class="drop-sub">or click to browse</div>
+          <div class="format-pills" id="format-pills">
+            <span class="pill pill-audio">MP3</span><span class="pill pill-audio">WAV</span><span class="pill pill-audio">OGG</span><span class="pill pill-audio">FLAC</span><span class="pill pill-audio">AAC</span><span class="pill pill-audio">M4A</span><span class="pill pill-audio">OPUS</span><span class="pill pill-audio">AIFF</span>
+            <span class="pill pill-video">MP4</span><span class="pill pill-video">MOV</span><span class="pill pill-video">MKV</span><span class="pill pill-video">AVI</span><span class="pill pill-video">WEBM</span><span class="pill pill-video">FLV</span><span class="pill pill-video">WMV</span>
+            <span class="pill pill-image">JPG</span><span class="pill pill-image">PNG</span><span class="pill pill-image">WEBP</span><span class="pill pill-image">BMP</span><span class="pill pill-image">TIFF</span><span class="pill pill-image">AVIF</span><span class="pill pill-image">GIF</span>
+          </div>
+        </div>
+      </div>
+      <input type="file" id="file-input" multiple
+        accept=".mp3,.wav,.ogg,.flac,.aac,.m4a,.opus,.aiff,.mp4,.mov,.mkv,.avi,.webm,.flv,.wmv,.jpg,.jpeg,.png,.webp,.bmp,.tiff,.tif,.gif,.avif" />
+
+      <!-- File queue -->
+      <div class="queue-header" id="queue-header" style="display:none">
+        <span id="queue-count">0 files</span>
+        <button class="btn-ghost" id="clear-all-btn">CLEAR ALL</button>
+      </div>
+      <div class="file-queue" id="file-queue"></div>
+    </section>
+
+    <!-- RIGHT PANEL: Settings + Convert -->
+    <section class="panel panel-settings">
+      <div class="panel-title">
+        <span class="panel-num">02</span> OUTPUT SETTINGS
+      </div>
+
+      <!-- Mode tabs -->
+      <div class="mode-tabs" id="mode-tabs">
+        <button class="mode-tab active" id="tab-convert" data-mode="convert">
+          <span class="mode-tab-icon">⇄</span> CONVERT
+        </button>
+        <button class="mode-tab" id="tab-extract" data-mode="extract">
+          <span class="mode-tab-icon">♪</span> EXTRACT AUDIO
+        </button>
+        <button class="mode-tab" id="tab-image" data-mode="image">
+          <span class="mode-tab-icon">◈</span> IMAGE
+        </button>
+      </div>
+
+      <!-- Extract audio notice (shown in extract mode) -->
+      <div class="extract-notice" id="extract-notice" style="display:none">
+        <span class="extract-notice-icon">ℹ</span>
+        Extracts audio track from video files. Audio-only files are skipped.
+        Choose the output audio format below.
+      </div>
+
+      <!-- Image options (shown in image mode) -->
+      <div class="image-options" id="image-options" style="display:none">
+        <div class="image-options-title"><span class="extract-notice-icon">⊞</span> RESIZE <span style="opacity:0.5;font-weight:400">(optional — leave blank to keep original size)</span></div>
+        <div class="image-resize-row">
+          <div class="resize-field">
+            <label class="resize-label">WIDTH px</label>
+            <input class="resize-input" id="img-width" type="number" min="1" max="16000" placeholder="e.g. 1920">
+          </div>
+          <div class="resize-sep">×</div>
+          <div class="resize-field">
+            <label class="resize-label">HEIGHT px</label>
+            <input class="resize-input" id="img-height" type="number" min="1" max="16000" placeholder="e.g. 1080">
+          </div>
+        </div>
+        <div class="resize-note">Aspect ratio is preserved if only one dimension is set.</div>
+      </div>
+
+      <!-- Output format selector -->
+      <div class="setting-block">
+        <div class="setting-label">FORMAT</div>
+        <div class="format-grid" id="format-grid">
+          <!-- filled by JS -->
+        </div>
+      </div>
+
+      <!-- Quality / bitrate -->
+      <div class="setting-block" id="quality-block">
+        <div class="setting-label">QUALITY</div>
+        <div class="quality-options" id="quality-options">
+          <!-- filled by JS -->
+        </div>
+      </div>
+
+      <!-- Output details -->
+      <div class="setting-block">
+        <div class="setting-label">OUTPUT INFO</div>
+        <div class="output-info" id="output-info">
+          <div class="info-row"><span class="info-key">Mode</span><span class="info-val" id="oi-mode">CONVERT</span></div>
+          <div class="info-row"><span class="info-key">Format</span><span class="info-val" id="oi-format">—</span></div>
+          <div class="info-row"><span class="info-key">Quality</span><span class="info-val" id="oi-quality">—</span></div>
+          <div class="info-row"><span class="info-key">Files</span><span class="info-val" id="oi-files">0 pending</span></div>
+        </div>
+      </div>
+
+      <!-- Convert button -->
+      <button class="btn-convert" id="convert-btn" disabled>
+        <span class="btn-convert-icon">⚙</span>
+        <span class="btn-convert-label" id="convert-btn-label">CONVERT</span>
+      </button>
+
+      <!-- Log window -->
+      <div class="setting-block" style="flex:1; min-height:0;">
+        <div class="setting-label">LOG
+          <button class="btn-ghost btn-tiny" onclick="document.getElementById('log-body').innerHTML=''">CLR</button>
+        </div>
+        <div class="log-window" id="log-body"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Progress overlay (shown during batch) -->
+  <div class="progress-overlay" id="progress-overlay" style="display:none">
+    <div class="progress-box">
+      <div class="progress-title">PROCESSING</div>
+      <div class="progress-current" id="progress-current">—</div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progress-bar-fill"></div>
+      </div>
+      <div class="progress-stats" id="progress-stats">0 / 0</div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="ffmpeg.js"></script>
+  <script src="ffmpeg-util.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
